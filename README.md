@@ -23,6 +23,9 @@ Just delete `/*, */` and type in the mac adress
 
 - ### Paste in this Code (also found in shelly_blu_btn.js)
 
+Or paste this to the libary under Scripts
+https://raw.githubusercontent.com/ronnikn/shelly.blu.button.standalone/main/SHELLY_MJS.md
+
 ```
  /**
  * This script uses the BLE scan functionality in scripting
