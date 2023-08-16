@@ -4,45 +4,66 @@
  * the service data payload and toggles a relay on the device on
  * button push
  */
- 
+
 // Shelly BLU devices:
 // SBBT - Shelly BLU Button
 // SBDW - Shelly BLU DoorWindow
- 
+
 // BTHome data format: https://bthome.io/format/
- 
+
 // sample Shelly DW service_data payload
 // 0x40 0x00 0x4E 0x01 0x64 0x05 0x00 0x00 0x00 0x2D 0x01 0x3F 0x00 0x00
- 
+
 // First byte: BTHome device info, 0x40 - no encryption, BTHome v.2
 // bit 0: “Encryption flag”
 // bit 1-4: “Reserved for future use”
 // bit 5-7: “BTHome Version”
- 
+
 // AD 0: PID, 0x00
 // Value: 0x4E
- 
+
 // AD 1: Battery, 0x01
 // Value, 100%
- 
+
 // AD 2: Illuminance, 0x05
 // Value: 0
- 
+
 // AD 3: Window, 0x2D
 // Value: true, open
- 
+
 // AD 4: Rotation, 0x3F
 // Value: 0
- 
+
 // Device name can be obtained if an active scan is performed
 // You can rely only on the address filtering and forego device name matching
- 
+
 // CHANGE HERE
-function onButtonPress() {
-  print("button pushed");
+function singlePush() {
+  print("Button pushed");
   Shelly.call("Switch.toggle", { id: 0});
 }
- 
+function doublePush() {
+  print("Button double pushed");
+  Shelly.call("Switch.toggle", { id: 0});
+}  
+function triplePush() {
+  print("button triple pushed");
+  Shelly.call("Switch.toggle", { id: 0});
+}  
+function longPush() {
+  print("Button long pushed");
+  Shelly.call("Switch.toggle", { id: 0});
+}  
+
+function onButtonPress(BTHparsed) {
+  print("Button pressed, emitting event");
+  Shelly.emitEvent("BLU_BUTTON", {
+    addr: BTHparsed.addr,
+    rssi: BTHparsed.rssi,
+    Button: BTHparsed.Button,
+    Battery: BTHparsed.Battery,
+  });
+}
 // remove name prefix to not filter by device name
 // remove address to not filter by address
 // filtering early by address or device name allows for faster execution
@@ -50,36 +71,102 @@ function onButtonPress() {
 // conditions would be checked for equality against the parsed advertisement packet
 // e.g. if there is an addr property in condition and it matches the value of addr property
 // in BTH parsed object then the condition is true
+// Button number define type of push. 1 = Single push, 2 = Double push, 3 = Triple push, 4 = Long push
 let CONFIG = {
   //shelly_blu_name_prefix: "SBBT",
   //shelly_blu_address: "bc:02:6e:c3:c8:b9",
   actions: [
     {
       cond: {
-        addr: "93:33:4e:6c:42:30",
+        addr: "3c:2e:f5:6f:77:9b",
         Button: 1,
       },
-      action: onButtonPress,
+      action: singlePush,
     },
+//  If You want to add a second Blu Button. Type in it's mac adress below and remove "/*", "*/" 
+// You can add as many Buttons as You want. Just copy/paste in more sections and and change the mac adress.
+/*    {
+      cond: {
+
+        addr: "3c:2e:f5:6f:77:9b",
+        Button: 1,
+      },
+      action: singlePush,
+    },  
+*/    
+    {
+      cond: {
+        addr: "3c:2e:f5:6f:77:9b",
+        Button: 2,
+      },
+      action: doublePush,
+    },
+//  If You want to add a second Blu Button. Type in it's mac adress below and remove "/*", "*/" 
+// You can add as many Buttons as You want. Just copy/paste in more sections and and change the mac adress.
+/*    {
+      cond: {
+
+        addr: "3c:2e:f5:6f:77:9b",
+        Button: 2,
+      },
+      action: doublePush,
+    },  
+*/    
+        {
+      cond: {
+        addr: "3c:2e:f5:6f:77:9b",
+        Button: 3,
+      },
+      action: triplePush,
+    },
+//  If You want to add a second Blu Button. Type in it's mac adress below and remove "/*", "*/" 
+// You can add as many Buttons as You want. Just copy/paste in more sections and and change the mac adress.
+/*    {
+      cond: {
+
+        addr: "3c:2e:f5:6f:77:9b",
+        Button: 3,
+      },
+      action: triplePush,
+    },  
+*/        
+        {
+      cond: {
+        addr: "3c:2e:f5:6f:77:9b",
+        Button: 4,
+      },
+      action: longPush,
+    },
+//  If You want to add a second Blu Button. Type in it's mac adress below and remove "/*", "*/" 
+// You can add as many Buttons as You want. Just copy/paste in more sections and and change the mac adress.
+/*    {
+      cond: {
+
+        addr: "3c:2e:f5:6f:77:9b",
+        Button: 4,
+      },
+      action: longPush,
+    },  
+*/        
   ],
 };
 // END OF CHANGE
- 
+
 let ALLTERCO_MFD_ID_STR = "0ba9";
 let BTHOME_SVC_ID_STR = "fcd2";
- 
+
 let SCAN_DURATION = BLE.Scanner.INFINITE_SCAN;
 let ACTIVE_SCAN =
   typeof CONFIG.shelly_blu_name_prefix !== "undefined" &&
   CONFIG.shelly_blu_name_prefix !== null;
- 
+
 let uint8 = 0;
 let int8 = 1;
 let uint16 = 2;
 let int16 = 3;
 let uint24 = 4;
 let int24 = 5;
- 
+
 function getByteSize(type) {
   if (type === uint8 || type === int8) return 1;
   if (type === uint16 || type === int16) return 2;
@@ -87,7 +174,7 @@ function getByteSize(type) {
   //impossible as advertisements are much smaller;
   return 255;
 }
- 
+
 let BTH = [];
 BTH[0x00] = { n: "pid", t: uint8 };
 BTH[0x01] = { n: "Battery", t: uint8, u: "%" };
@@ -97,7 +184,7 @@ BTH[0x20] = { n: "Moisture", t: uint8 };
 BTH[0x2d] = { n: "Window", t: uint8 };
 BTH[0x3a] = { n: "Button", t: uint8 };
 BTH[0x3f] = { n: "Rotation", t: int16, f: 0.1 };
- 
+
 let BTHomeDecoder = {
   utoi: function (num, bitsz) {
     let mask = 1 << (bitsz - 1);
@@ -145,7 +232,7 @@ let BTHomeDecoder = {
     //Can not handle encrypted data
     if (result["encryption"]) return result;
     buffer = buffer.slice(1);
- 
+
     let _bth;
     let _value;
     while (buffer.length > 0) {
@@ -164,7 +251,7 @@ let BTHomeDecoder = {
     return result;
   },
 };
- 
+
 let ShellyBLUParser = {
   getData: function (res) {
     let result = BTHomeDecoder.unpack(res.service_data[BTHOME_SVC_ID_STR]);
@@ -173,7 +260,7 @@ let ShellyBLUParser = {
     return result;
   },
 };
- 
+
 let last_packet_id = 0x100;
 function scanCB(ev, res) {
   if (ev !== BLE.Scanner.SCAN_RESULT) return;
@@ -222,7 +309,7 @@ function scanCB(ev, res) {
     if (run) CONFIG.actions[aIdx]["action"](BTHparsed);
   }
 }
- 
+
 // retry several times to start the scanner if script was started before
 // BLE infrastructure was up in the Shelly
 function startBLEScan() {
@@ -233,7 +320,7 @@ function startBLEScan() {
     console.log('Success: BLU button scanner running');
   }
 }
- 
+
 //Check for BLE config and print a message if BLE is not enabled on the device
 let BLEConfig = Shelly.getComponentConfig('ble');
 if(BLEConfig.enable === false) {
