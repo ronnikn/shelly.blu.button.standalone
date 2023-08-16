@@ -1,161 +1,263 @@
-# With this script, You will be able to control the relay of a Shelly Plus or Pro device directly with Shelly Blu Button 1 without any use of internet, wifi or gateway.
+# Shelly Blu Button 1 and Shelly Plus/Pro Standalone.
+With this script, You will be able to control the relay of a Shelly Plus or Pro device directly with Shelly Blu Button 1 without any use of internet, wifi or gateway.
 
  This is a modified script from https://github.com/ALLTERCO/shelly-script-examples/blob/main/ble-shelly-btn.js
  I couldn't get i to work as intended, soo I did som small changes
-# Setup
 
-- ### First enter The Shelly's Web UI by entering it's ip-adress in a browser.
-
-![My Image](Screenshots/bar.png)
- 
-
-- ### Go to Setting
-
-![My Image](Screenshots/1.png)
+This script requires firmware 0.12 or later
 
 
-- ### Go to Debug
-
-![My Image](Screenshots/2.png)
 
 
-- ### Enable Websocket debug and Save Settings
-
-![My Image](Screenshots/3.png)
-
-
-- ### Go to Scripts and Add script
-
-![My Image](Screenshots/4a.png)
-
-
-- ### Paste in this Code (also found in spotprice_dkk.js)
+- ### Paste in this Code (also found in blu.btn.js)
 
 ```
- let CONFIG = {
-  api_endpoint: "http://api.energidataservice.dk/dataset/Elspotprices?filter={%22PriceArea%22:[%22LANDEKODE%22]}&columns=SpotPriceDKK,HourDK&sort=HourDK&start=now-P1D&limit=1&offset=23",
-  switchId: 0,             // ID of the switch to control
-  price_limit: 2000,        // EUR/MWh. Vat not included
-  update_time: 60000,      // 1 minute. Price update interval in milliseconds
-  reverse_switching: false // If true, switch will be turned on when price is over the limit
+ /**
+ * This script uses the BLE scan functionality in scripting
+ * Selects Shelly BLU Buttons from the aired advertisements, decodes
+ * the service data payload and toggles a relay on the device on
+ * button push
+ */
+ 
+// Shelly BLU devices:
+// SBBT - Shelly BLU Button
+// SBDW - Shelly BLU DoorWindow
+ 
+// BTHome data format: https://bthome.io/format/
+ 
+// sample Shelly DW service_data payload
+// 0x40 0x00 0x4E 0x01 0x64 0x05 0x00 0x00 0x00 0x2D 0x01 0x3F 0x00 0x00
+ 
+// First byte: BTHome device info, 0x40 - no encryption, BTHome v.2
+// bit 0: “Encryption flag”
+// bit 1-4: “Reserved for future use”
+// bit 5-7: “BTHome Version”
+ 
+// AD 0: PID, 0x00
+// Value: 0x4E
+ 
+// AD 1: Battery, 0x01
+// Value, 100%
+ 
+// AD 2: Illuminance, 0x05
+// Value: 0
+ 
+// AD 3: Window, 0x2D
+// Value: true, open
+ 
+// AD 4: Rotation, 0x3F
+// Value: 0
+ 
+// Device name can be obtained if an active scan is performed
+// You can rely only on the address filtering and forego device name matching
+ 
+// CHANGE HERE
+function onButtonPress() {
+  print("button pushed");
+  Shelly.call("Switch.toggle", { id: 0});
+}
+ 
+// remove name prefix to not filter by device name
+// remove address to not filter by address
+// filtering early by address or device name allows for faster execution
+// actions is an array objects containing condition and action property
+// conditions would be checked for equality against the parsed advertisement packet
+// e.g. if there is an addr property in condition and it matches the value of addr property
+// in BTH parsed object then the condition is true
+let CONFIG = {
+  //shelly_blu_name_prefix: "SBBT",
+  //shelly_blu_address: "bc:02:6e:c3:c8:b9",
+  actions: [
+    {
+      cond: {
+        addr: "93:33:4e:6c:42:30",
+        Button: 1,
+      },
+      action: onButtonPress,
+    },
+  ],
 };
-
-let current_price = null;
-let last_hour = null;
-let last_price = null;
-let state = null;
-
-function getCurrentPrice() {
-  Shelly.call(
-    "http.get",
-    {
-      url: CONFIG.api_endpoint,
-    },
-    function (response, error_code, error_message) {
-      if (error_code !== 0) {
-        print(error_message);
-        return;
-      }
-      current_price = JSON.parse(response.body).records[0]["SpotPriceDKK"];
-      print("Updated current price!");
-    }
-  );
-}
-
-function changeSwitchState(state) {
-  let state = state;
-
-  if(state === false) {
-    print("Switching off!");
-  } else if(state === true) {
-    print("Switching on!");
-  } else {
-    print("Unknown state");
-  }
-
-  Shelly.call(
-    "Switch.Set",
-    {
-      id: CONFIG.switchId,
-      on: state,
-    },
-    function (response, error_code, error_message) {
-      if (error_code !== 0) {
-        print(error_message);
-        return;
-      }
-    }
-  );
-}
-
-Timer.set(CONFIG.update_time, true, function (userdata) {
-  Shelly.call("Sys.GetStatus", {}, function (resp, error_code, error_message) {
-    if (error_code !== 0) {
-      print(error_message);
-      return;
-    } else {
-      let hour = resp.time[0] + resp.time[1];
-      //update prices
-      if (last_hour !== hour) {
-        print("update hour");
-        last_hour = hour;
-        getCurrentPrice();
-      }
-
-      //check if current price is set
-      if (current_price !== null) {
-
-        //Normal switching. Turn relay off if price is over the limit
-        if(CONFIG.reverse_switching === false) {
-          if (current_price >= CONFIG.price_limit) {
-            //swith relay off if price is higher than limit
-            changeSwitchState(false);
-          } else {
-            //swith relay on if price is lower than limit
-            changeSwitchState(true);
-          }
-        }
-
-        //Reverse switching. Turn relay on if price is over the limit
-        if(CONFIG.reverse_switching === true) {
-          if (current_price >= CONFIG.price_limit) {
-            //swith relay on if price is higher than limit
-            changeSwitchState(true);
-          } else {
-            //swith relay off if price is lower than limit
-            changeSwitchState(false);
-          }
-        }
-
-      } else {
-        print("Current price is null. Waiting for price update!");
-      }
-      
-
-      print(current_price);
-    }
-  });
-});
-```
-## Configure API endpoint
-Find `api_endpoint` and change `LANDEKODE` to 
-- `DK1` For Fyn / Jylland
-- `DK2` For Sjælland
-
-EX. For Sjælland
-
-`api_endpoint: "http://api.energidataservice.dk/dataset/Elspotprices?filter={%22PriceArea%22:[%22DK1%22]}&columns=SpotPriceDKK,HourDK&sort=HourDK&start=now-P1D&limit=2&offset=23"`
+// END OF CHANGE
  
-## Set your price point  
-Find configuration value `price_limit` and change value for when your device turns on or off. Prices don’t include VAT and are measured in DKK/MWh
-### Example
-```  price_limit: 1500 ```
-Will set toggling threshold for the device to 1.5 DKK/kWh
+let ALLTERCO_MFD_ID_STR = "0ba9";
+let BTHOME_SVC_ID_STR = "fcd2";
+ 
+let SCAN_DURATION = BLE.Scanner.INFINITE_SCAN;
+let ACTIVE_SCAN =
+  typeof CONFIG.shelly_blu_name_prefix !== "undefined" &&
+  CONFIG.shelly_blu_name_prefix !== null;
+ 
+let uint8 = 0;
+let int8 = 1;
+let uint16 = 2;
+let int16 = 3;
+let uint24 = 4;
+let int24 = 5;
+ 
+function getByteSize(type) {
+  if (type === uint8 || type === int8) return 1;
+  if (type === uint16 || type === int16) return 2;
+  if (type === uint24 || type === int24) return 3;
+  //impossible as advertisements are much smaller;
+  return 255;
+}
+ 
+let BTH = [];
+BTH[0x00] = { n: "pid", t: uint8 };
+BTH[0x01] = { n: "Battery", t: uint8, u: "%" };
+BTH[0x05] = { n: "Illuminance", t: uint24, f: 0.01 };
+BTH[0x1a] = { n: "Door", t: uint8 };
+BTH[0x20] = { n: "Moisture", t: uint8 };
+BTH[0x2d] = { n: "Window", t: uint8 };
+BTH[0x3a] = { n: "Button", t: uint8 };
+BTH[0x3f] = { n: "Rotation", t: int16, f: 0.1 };
+ 
+let BTHomeDecoder = {
+  utoi: function (num, bitsz) {
+    let mask = 1 << (bitsz - 1);
+    return num & mask ? num - (1 << bitsz) : num;
+  },
+  getUInt8: function (buffer) {
+    return buffer.at(0);
+  },
+  getInt8: function (buffer) {
+    return this.utoi(this.getUInt8(buffer), 8);
+  },
+  getUInt16LE: function (buffer) {
+    return 0xffff & ((buffer.at(1) << 8) | buffer.at(0));
+  },
+  getInt16LE: function (buffer) {
+    return this.utoi(this.getUInt16LE(buffer), 16);
+  },
+  getUInt24LE: function (buffer) {
+    return (
+      0x00ffffff & ((buffer.at(2) << 16) | (buffer.at(1) << 8) | buffer.at(0))
+    );
+  },
+  getInt24LE: function (buffer) {
+    return this.utoi(this.getUInt24LE(buffer), 24);
+  },
+  getBufValue: function (type, buffer) {
+    if (buffer.length < getByteSize(type)) return null;
+    let res = null;
+    if (type === uint8) res = this.getUInt8(buffer);
+    if (type === int8) res = this.getInt8(buffer);
+    if (type === uint16) res = this.getUInt16LE(buffer);
+    if (type === int16) res = this.getInt16LE(buffer);
+    if (type === uint24) res = this.getUInt24LE(buffer);
+    if (type === int24) res = this.getInt24LE(buffer);
+    return res;
+  },
+  unpack: function (buffer) {
+    // beacons might not provide BTH service data
+    if (typeof buffer !== "string" || buffer.length === 0) return null;
+    let result = {};
+    let _dib = buffer.at(0);
+    result["encryption"] = _dib & 0x1 ? true : false;
+    result["BTHome_version"] = _dib >> 5;
+    if (result["BTHome_version"] !== 2) return null;
+    //Can not handle encrypted data
+    if (result["encryption"]) return result;
+    buffer = buffer.slice(1);
+ 
+    let _bth;
+    let _value;
+    while (buffer.length > 0) {
+      _bth = BTH[buffer.at(0)];
+      if (typeof _bth === "undefined") {
+        console.log("BTH: unknown type");
+        break;
+      }
+      buffer = buffer.slice(1);
+      _value = this.getBufValue(_bth.t, buffer);
+      if (_value === null) break;
+      if (typeof _bth.f !== "undefined") _value = _value * _bth.f;
+      result[_bth.n] = _value;
+      buffer = buffer.slice(getByteSize(_bth.t));
+    }
+    return result;
+  },
+};
+ 
+let ShellyBLUParser = {
+  getData: function (res) {
+    let result = BTHomeDecoder.unpack(res.service_data[BTHOME_SVC_ID_STR]);
+    result.addr = res.addr;
+    result.rssi = res.rssi;
+    return result;
+  },
+};
+ 
+let last_packet_id = 0x100;
+function scanCB(ev, res) {
+  if (ev !== BLE.Scanner.SCAN_RESULT) return;
+  // skip if there is no service_data member
+  if (
+    typeof res.service_data === "undefined" ||
+    typeof res.service_data[BTHOME_SVC_ID_STR] === "undefined"
+  )
+    return;
+  // skip if we are looking for name match but don't have active scan as we don't have name
+  if (
+    typeof CONFIG.shelly_blu_name_prefix !== "undefined" &&
+    (typeof res.local_name === "undefined" ||
+      res.local_name.indexOf(CONFIG.shelly_blu_name_prefix) !== 0)
+  )
+    return;
+  // skip if we don't have address match
+  if (
+    typeof CONFIG.shelly_blu_address !== "undefined" &&
+    CONFIG.shelly_blu_address !== res.addr
+  )
+    return;
+  let BTHparsed = ShellyBLUParser.getData(res);
+  // skip if parsing failed
+  if (BTHparsed === null) {
+    console.log("Failed to parse BTH data");
+    return;
+  }
+  // skip, we are deduping results
+  if (last_packet_id === BTHparsed.pid) return;
+  last_packet_id = BTHparsed.pid;
+  console.log("Shelly BTH packet: ", JSON.stringify(BTHparsed));
+  // execute actions from CONFIG
+  let aIdx = null;
+  for (aIdx in CONFIG.actions) {
+    // skip if no condition defined
+    if (typeof CONFIG.actions[aIdx]["cond"] === "undefined") continue;
+    let cond = CONFIG.actions[aIdx]["cond"];
+    let cIdx = null;
+    let run = true;
+    for (cIdx in cond) {
+      if (typeof BTHparsed[cIdx] === "undefined") run = false;
+      if (BTHparsed[cIdx] !== cond[cIdx]) run = false;
+    }
+    // if all conditions evaluated to true then execute
+    if (run) CONFIG.actions[aIdx]["action"](BTHparsed);
+  }
+}
+ 
+// retry several times to start the scanner if script was started before
+// BLE infrastructure was up in the Shelly
+function startBLEScan() {
+  let bleScanSuccess = BLE.Scanner.Start({ duration_ms: SCAN_DURATION, active: ACTIVE_SCAN }, scanCB);
+  if( bleScanSuccess === false ) {
+    Timer.set(1000, false, startBLEScan);
+  } else {
+    console.log('Success: BLU button scanner running');
+  }
+}
+ 
+//Check for BLE config and print a message if BLE is not enabled on the device
+let BLEConfig = Shelly.getComponentConfig('ble');
+if(BLEConfig.enable === false) {
+  console.log('Error: BLE not enabled');
+} else {
+  Timer.set(1000, false, startBLEScan);
+}
+```
+## Change Button Mac Adress
+Find `addr: "93:33:4e:6c:42:30",` and change `"93:33:4e:6c:42:30",` to mac adrees of Your Blu Button
 
-- ### After you have done the configuration Give the script a name press Save and Start :)
-
-![My Image](Screenshots/5a.png)
 
 
-### (Note) Setting relay to switch.
-Most shelly devices have only one output(relay). If you want to change the output channel find `switchId` and set it to the desired output.
