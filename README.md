@@ -16,8 +16,7 @@ For doublepush Find  `addr: "93:33:4e:6c:42:30",` under `Button: 2` and change `
 The same for triple and long push.
 Button number define type of push. 1 = Single push, 2 = Double push, 3 = Triple push, 4 = Long push
 
-If You want to add a second Blu Button, You can do it by using the section in between the `/*
-                                                                                           */`
+If You want to add a second Blu Button, You can do it by using the section in between the `/*,*/`
 Just delete `/*, */` and type in the mac adress 
 // You can add as many Buttons as You want. Just copy/paste in more sections and and change the mac adress.
 
