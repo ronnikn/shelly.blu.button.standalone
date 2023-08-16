@@ -2,11 +2,9 @@
 Script to make Your Shelly Blu Button 1 talk directly to Your Shelly Plus or Pro device
 
  
-# Turn Shelly On/Off based on current Danish spotprice from Energi Data Service
-Price don’t include VAT and are measured in DKK/MWh
+# This is a modified script from https://github.com/ALLTERCO/shelly-script-examples/blob/main/ble-shelly-btn.js
  
-This code pulls the current spotprice from energidataservice API `http://api.energidataservice.dk`
-
+I couldn't get i to work as intended, soo I did som small changes
 # Setup
 
 - ### First enter The Shelly's Web UI by entering it's ip-adress in a browser.
