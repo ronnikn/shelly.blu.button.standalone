@@ -1,10 +1,7 @@
-# Shelly.blu.button.standalone
-Script to make Your Shelly Blu Button 1 talk directly to Your Shelly Plus or Pro device
+# With this script, You will be able to control the relay of a Shelly Plus or Pro device directly with Shelly Blu Button 1 without any use of internet, wifi or gateway.
 
- 
-# This is a modified script from https://github.com/ALLTERCO/shelly-script-examples/blob/main/ble-shelly-btn.js
- 
-I couldn't get i to work as intended, soo I did som small changes
+ This is a modified script from https://github.com/ALLTERCO/shelly-script-examples/blob/main/ble-shelly-btn.js
+ I couldn't get i to work as intended, soo I did som small changes
 # Setup
 
 - ### First enter The Shelly's Web UI by entering it's ip-adress in a browser.
