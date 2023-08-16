@@ -21,7 +21,7 @@ Just delete `/*, */` and type in the mac adress
 // You can add as many Buttons as You want. Just copy/paste in more sections and and change the mac adress.
 
 
-- ### Paste in this Code (also found in blu.btn.js)
+- ### Paste in this Code (also found in shelly_blu_btn.js)
 
 ```
  /**
