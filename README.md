@@ -2,7 +2,7 @@
 With this script, You will be able to control the relay of a Shelly Plus or Pro device directly with Shelly Blu Button 1 without any use of internet, wifi or gateway.
 
  This is a modified script from https://github.com/ALLTERCO/shelly-script-examples/blob/main/ble-shelly-btn.js
- I couldn't get i to work as intended, soo I did som small changes
+ I couldn't get i to work as intended, soo I did som small changes.
 
 This script requires firmware 0.12 or later
 
@@ -11,13 +11,13 @@ This script requires firmware 0.12 or later
 # Setup
 
 ## Change Buttons Mac Adress
-For singelpush Find  `addr: "93:33:4e:6c:42:30",` under `Button: 1` and change `"93:33:4e:6c:42:30",` to mac adrees of Your Blu Button.
-For doublepush Find  `addr: "93:33:4e:6c:42:30",` under `Button: 2` and change `"93:33:4e:6c:42:30",` to mac adrees of Your Blu Button.
+For singelpush Find  `addr: "93:33:4e:6c:42:30",` under `Button: 1` and change `"93:33:4e:6c:42:30",` to the mac adrees of Your Blu Button.
+For doublepush Find  `addr: "93:33:4e:6c:42:30",` under `Button: 2` and change `"93:33:4e:6c:42:30",` to the mac adrees of Your Blu Button.
 The same for triple and long push.
-Button number define type of push. 1 = Single push, 2 = Double push, 3 = Triple push, 4 = Long push
+Button number define the type of push. 1 = Single push, 2 = Double push, 3 = Triple push, 4 = Long push
 
 If You want to add a second Blu Button, You can do it by using the section in between the `/*,*/`
-Just delete `/*, */` and type in the mac adress 
+Just delete `/*, */` and type in the mac the adress 
 // You can add as many Buttons as You want. Just copy/paste in more sections and and change the mac adress.
 
 
