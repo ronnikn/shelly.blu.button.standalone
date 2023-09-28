@@ -10,7 +10,7 @@ This script requires firmware 0.12 or later
 
 # Setup
 
-## Change Buttons Mac Adress
+## Change Buttons Mac Adress **IT'S IMPORTANT TO KEEP THE MAC ADRESS LOWERCASE**
 For singelpush Find  `addr: "93:33:4e:6c:42:30",` under `Button: 1` and change `"93:33:4e:6c:42:30",` to the mac adrees of Your Blu Button.
 For doublepush Find  `addr: "93:33:4e:6c:42:30",` under `Button: 2` and change `"93:33:4e:6c:42:30",` to the mac adrees of Your Blu Button.
 The same for triple and long push.
