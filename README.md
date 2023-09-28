@@ -20,6 +20,10 @@ If You want to add a second Blu Button, You can do it by using the section in be
 Just delete `/*, */` and type in the mac the adress 
 // You can add as many Buttons as You want. Just copy/paste in more sections and and change the mac adress.
 
+##Change the output nr.
+If You use single channel relays nothing should be changed.
+If needed to be changed finde the section with the `Shelly.call("Switch.toggle", { id: 0});` and change the id for the type of button push You want.
+The Id of the output nuber is as follow: Output:1 = id:0,  Output:2 = id:1,  Output:3 = id:2.  Output:4 = id:3
 
 - ### Paste in this Code (also found in shelly_blu_btn.js)
 
@@ -66,7 +70,7 @@ https://raw.githubusercontent.com/ronnikn/shelly.blu.button.standalone/main/SHEL
 // Device name can be obtained if an active scan is performed
 // You can rely only on the address filtering and forego device name matching
 
-// CHANGE HERE
+// CHANGE ID OUTPUT HERE. The Id of the output nuber is as follow: Output:1 = id:0,  Output:2 = id:1,  Output:3 = id:2.  Output:4 = id:3
 function singlePush() {
   print("Button pushed");
   Shelly.call("Switch.toggle", { id: 0});
